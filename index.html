@@ -1,0 +1,1999 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS AI — 智能未来研究院</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Noto+Serif+SC:wght@300;400;500&family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #04060f;
+    --surface: #070b18;
+    --gold: #c8a96e;
+    --gold-dim: #8a6f3f;
+    --cyan: #4ab8d4;
+    --cyan-dim: #1e5f70;
+    --white: #e8eaf0;
+    --white-dim: #7a8099;
+    --border: rgba(200,169,110,0.15);
+    --glow: rgba(74,184,212,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* Custom cursor */
+  .cursor {
+    position: fixed;
+    width: 8px; height: 8px;
+    background: var(--gold);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transition: transform 0.1s ease;
+    mix-blend-mode: difference;
+  }
+  .cursor-ring {
+    position: fixed;
+    width: 36px; height: 36px;
+    border: 1px solid var(--gold);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transition: all 0.15s ease;
+    opacity: 0.5;
+  }
+
+  /* Canvas */
+  #canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Nav */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 28px 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid transparent;
+    transition: all 0.5s ease;
+  }
+  nav.scrolled {
+    background: rgba(4,6,15,0.92);
+    backdrop-filter: blur(20px);
+    border-bottom-color: var(--border);
+  }
+  .logo {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.25em;
+    color: var(--gold);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .logo-mark {
+    width: 28px; height: 28px;
+    border: 1px solid var(--gold);
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .logo-mark::before {
+    content: '';
+    position: absolute;
+    width: 14px; height: 14px;
+    border: 1px solid var(--gold);
+    transform: rotate(45deg);
+  }
+  /* Nav dropdown menus */
+  .nav-links {
+    display: flex;
+    gap: 4px;
+    list-style: none;
+    align-items: center;
+  }
+  .nav-item {
+    position: relative;
+  }
+  .nav-links > .nav-item > a,
+  .nav-links > .nav-item > .nav-link-btn {
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    color: var(--white-dim);
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: color 0.3s;
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    white-space: nowrap;
+  }
+  .nav-links > .nav-item > a:hover,
+  .nav-links > .nav-item > .nav-link-btn:hover { color: var(--gold); }
+  .nav-link-btn svg {
+    width: 9px; height: 9px;
+    stroke: currentColor;
+    fill: none;
+    transition: transform 0.3s;
+  }
+  .nav-item.open > .nav-link-btn svg { transform: rotate(180deg); }
+  /* Sub dropdown */
+  .nav-sub {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    background: rgba(7,11,24,0.97);
+    backdrop-filter: blur(24px);
+    border: 1px solid var(--border);
+    min-width: 180px;
+    opacity: 0;
+    transform: translateY(-8px);
+    pointer-events: none;
+    transition: all 0.25s ease;
+    z-index: 200;
+  }
+  .nav-item.open > .nav-sub {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: all;
+  }
+  .nav-sub a {
+    display: block;
+    padding: 12px 20px;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--white-dim);
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    border-bottom: 1px solid rgba(200,169,110,0.07);
+    font-family: 'Space Mono', monospace;
+  }
+  .nav-sub a:last-child { border-bottom: none; }
+  .nav-sub a:hover { color: var(--gold); background: rgba(200,169,110,0.05); padding-left: 26px; }
+
+  /* Lang switcher dropdown */
+  .lang-switcher {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .lang-trigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: 1px solid var(--border);
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    color: var(--white-dim);
+    cursor: pointer;
+    padding: 8px 14px;
+    transition: all 0.3s;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .lang-trigger:hover {
+    color: var(--gold);
+    border-color: var(--gold-dim);
+  }
+  .lang-trigger svg {
+    width: 10px; height: 10px;
+    transition: transform 0.3s ease;
+    flex-shrink: 0;
+    stroke: currentColor;
+  }
+  .lang-switcher.open .lang-trigger svg { transform: rotate(180deg); }
+  .lang-globe {
+    width: 13px; height: 13px;
+    flex-shrink: 0;
+    stroke: currentColor;
+    fill: none;
+  }
+  .lang-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: rgba(7,11,24,0.97);
+    backdrop-filter: blur(24px);
+    border: 1px solid var(--border);
+    min-width: 140px;
+    opacity: 0;
+    transform: translateY(-8px);
+    pointer-events: none;
+    transition: all 0.25s ease;
+    z-index: 200;
+  }
+  .lang-switcher.open .lang-dropdown {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: all;
+  }
+  .lang-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--white-dim);
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    text-transform: uppercase;
+    border-bottom: 1px solid transparent;
+  }
+  .lang-option:not(:last-child) { border-bottom: 1px solid rgba(200,169,110,0.07); }
+  .lang-option:hover { color: var(--gold); background: rgba(200,169,110,0.05); }
+  .lang-option.active { color: var(--gold); }
+  .lang-option.active::after {
+    content: '';
+    display: block;
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--gold);
+    margin-left: auto;
+  }
+  .lang-flag {
+    font-size: 13px;
+    line-height: 1;
+  }
+
+  /* Hero */
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 60px;
+    z-index: 1;
+  }
+  .hero-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.4em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 32px;
+    opacity: 0;
+    animation: fadeUp 1s ease 0.3s forwards;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .hero-label::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 1px;
+    background: var(--gold);
+  }
+  .hero-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(56px, 8vw, 120px);
+    font-weight: 300;
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    margin-bottom: 48px;
+    opacity: 0;
+    animation: fadeUp 1.2s ease 0.5s forwards;
+  }
+  .hero-title-zh {
+    font-family: 'Noto Serif SC', serif;
+    font-weight: 300;
+    font-size: clamp(40px, 6vw, 88px);
+  }
+  .hero-title em {
+    font-style: normal;
+    color: transparent;
+    -webkit-text-stroke: 1px var(--gold);
+  }
+  .hero-desc {
+    max-width: 480px;
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--white-dim);
+    margin-bottom: 60px;
+    opacity: 0;
+    animation: fadeUp 1.2s ease 0.8s forwards;
+  }
+  .hero-cta {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    opacity: 0;
+    animation: fadeUp 1.2s ease 1s forwards;
+  }
+  .btn-primary {
+    padding: 16px 40px;
+    border: 1px solid var(--gold);
+    background: transparent;
+    color: var(--gold);
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.4s ease;
+    text-decoration: none;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-primary::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--gold);
+    transform: translateX(-100%);
+    transition: transform 0.4s ease;
+  }
+  .btn-primary:hover { color: var(--bg); }
+  .btn-primary:hover::before { transform: translateX(0); }
+  .btn-primary span { position: relative; z-index: 1; }
+
+  .btn-text {
+    font-size: 12px;
+    color: var(--white-dim);
+    letter-spacing: 0.1em;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: color 0.3s;
+  }
+  .btn-text:hover { color: var(--white); }
+  .btn-text::after {
+    content: '→';
+    transition: transform 0.3s;
+  }
+  .btn-text:hover::after { transform: translateX(4px); }
+
+  /* Scroll indicator */
+  .scroll-indicator {
+    position: absolute;
+    bottom: 48px;
+    left: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+    animation: fadeIn 1s ease 1.5s forwards;
+  }
+  .scroll-line {
+    width: 1px;
+    height: 60px;
+    background: linear-gradient(to bottom, var(--gold), transparent);
+    animation: scrollPulse 2s ease infinite;
+  }
+  .scroll-text {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    color: var(--white-dim);
+    writing-mode: vertical-rl;
+    text-transform: uppercase;
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    position: absolute;
+    right: 60px;
+    bottom: 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    opacity: 0;
+    animation: fadeIn 1s ease 1.2s forwards;
+  }
+  .stat-item {
+    text-align: right;
+  }
+  .stat-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 36px;
+    font-weight: 300;
+    color: var(--gold);
+    line-height: 1;
+  }
+  .stat-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: var(--white-dim);
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  /* Section shared */
+  section {
+    position: relative;
+    z-index: 1;
+    padding: 140px 60px;
+  }
+  .section-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.4em;
+    color: var(--cyan);
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .section-tag::before {
+    content: '';
+    display: block;
+    width: 24px;
+    height: 1px;
+    background: var(--cyan);
+  }
+  .section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(36px, 5vw, 72px);
+    font-weight: 300;
+    line-height: 1.1;
+    margin-bottom: 24px;
+  }
+  .section-title-zh {
+    font-family: 'Noto Serif SC', serif;
+    font-weight: 300;
+  }
+
+  /* About section */
+  .about {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 120px;
+    align-items: center;
+    border-top: 1px solid var(--border);
+  }
+  .about-text {
+    font-size: 15px;
+    line-height: 2;
+    color: var(--white-dim);
+    margin-top: 32px;
+  }
+  .about-visual {
+    position: relative;
+    height: 500px;
+  }
+  .hexgrid {
+    position: absolute;
+    inset: 0;
+    opacity: 0.4;
+  }
+
+  /* Pillars */
+  .pillars-section {
+    border-top: 1px solid var(--border);
+  }
+  .pillars-header {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    margin-bottom: 100px;
+  }
+  .pillars-intro {
+    font-size: 15px;
+    line-height: 2;
+    color: var(--white-dim);
+    grid-column: 2;
+    align-self: end;
+  }
+  .pillars-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+  }
+  .pillar {
+    background: var(--bg);
+    padding: 60px 48px;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.5s ease;
+  }
+  .pillar::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(to right, var(--gold), transparent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.5s ease;
+  }
+  .pillar:hover { background: var(--surface); }
+  .pillar:hover::before { transform: scaleX(1); }
+  .pillar-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 80px;
+    font-weight: 300;
+    color: var(--border);
+    line-height: 1;
+    margin-bottom: 40px;
+    transition: color 0.5s;
+  }
+  .pillar:hover .pillar-num { color: rgba(200,169,110,0.15); }
+  .pillar-icon {
+    width: 48px; height: 48px;
+    margin-bottom: 32px;
+    color: var(--gold);
+  }
+  .pillar-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 32px;
+    font-weight: 400;
+    margin-bottom: 8px;
+    line-height: 1.2;
+  }
+  .pillar-name-zh {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 24px;
+    font-weight: 400;
+  }
+  .pillar-en {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 28px;
+  }
+  .pillar-desc {
+    font-size: 14px;
+    line-height: 1.9;
+    color: var(--white-dim);
+  }
+  .pillar-arrow {
+    position: absolute;
+    bottom: 48px; right: 48px;
+    font-size: 20px;
+    color: var(--gold);
+    opacity: 0;
+    transform: translateX(-8px);
+    transition: all 0.4s ease;
+  }
+  .pillar:hover .pillar-arrow {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  /* Manifesto */
+  .manifesto {
+    background: var(--surface);
+    text-align: center;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .manifesto-quote {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(28px, 4vw, 56px);
+    font-weight: 300;
+    line-height: 1.4;
+    max-width: 900px;
+    margin: 0 auto 48px;
+    letter-spacing: 0.02em;
+  }
+  .manifesto-quote-zh {
+    font-family: 'Noto Serif SC', serif;
+    font-weight: 300;
+  }
+  .manifesto-author {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.4em;
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+  .manifesto-divider {
+    width: 60px;
+    height: 1px;
+    background: var(--border);
+    margin: 40px auto;
+  }
+
+  /* Timeline */
+  .timeline-section {
+    border-top: 1px solid var(--border);
+  }
+  .timeline {
+    margin-top: 80px;
+    position: relative;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 1px;
+    background: linear-gradient(to bottom, var(--gold-dim), transparent);
+  }
+  .timeline-item {
+    padding: 0 0 60px 60px;
+    position: relative;
+  }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -3px; top: 6px;
+    width: 7px; height: 7px;
+    border: 1px solid var(--gold);
+    background: var(--bg);
+    border-radius: 50%;
+  }
+  .timeline-year {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--gold);
+    margin-bottom: 12px;
+  }
+  .timeline-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 400;
+    margin-bottom: 12px;
+  }
+  .timeline-desc {
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--white-dim);
+    max-width: 480px;
+  }
+
+  /* Partners */
+  .partners-section {
+    border-top: 1px solid var(--border);
+    text-align: center;
+  }
+  .partners-grid {
+    display: flex;
+    justify-content: center;
+    gap: 80px;
+    margin-top: 80px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .partner-item {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--white-dim);
+    text-transform: uppercase;
+    padding: 16px 32px;
+    border: 1px solid var(--border);
+    transition: all 0.4s;
+  }
+  .partner-item:hover {
+    color: var(--gold);
+    border-color: var(--gold-dim);
+  }
+
+  /* Contact / Footer CTA */
+  .footer-cta {
+    border-top: 1px solid var(--border);
+    text-align: center;
+    background: var(--surface);
+  }
+  .footer-cta .section-title {
+    margin-bottom: 24px;
+  }
+  .footer-cta p {
+    font-size: 15px;
+    color: var(--white-dim);
+    line-height: 1.8;
+    margin-bottom: 60px;
+  }
+
+  /* Footer */
+  footer {
+    position: relative;
+    z-index: 1;
+    border-top: 1px solid var(--border);
+  }
+
+  /* Footer main columns */
+  .footer-main {
+    padding: 80px 60px 60px;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 60px;
+    border-bottom: 1px solid var(--border);
+  }
+  .footer-brand .logo { margin-bottom: 24px; display: inline-flex; }
+  .footer-brand p {
+    font-size: 13px;
+    line-height: 1.9;
+    color: var(--white-dim);
+    max-width: 280px;
+    margin-bottom: 32px;
+  }
+  .footer-social {
+    display: flex;
+    gap: 12px;
+  }
+  .social-link {
+    width: 34px; height: 34px;
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--white-dim);
+    text-decoration: none;
+    transition: all 0.3s;
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+  }
+  .social-link:hover { color: var(--gold); border-color: var(--gold-dim); background: rgba(200,169,110,0.05); }
+  .footer-col-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .footer-col-links {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .footer-col-links li a {
+    font-size: 12px;
+    color: var(--white-dim);
+    text-decoration: none;
+    letter-spacing: 0.05em;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .footer-col-links li a::before {
+    content: '';
+    display: block;
+    width: 12px; height: 1px;
+    background: var(--border);
+    transition: all 0.3s;
+    flex-shrink: 0;
+  }
+  .footer-col-links li a:hover { color: var(--gold); }
+  .footer-col-links li a:hover::before { width: 18px; background: var(--gold-dim); }
+
+  /* Footer contact block placeholder */
+  .footer-contact-info {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .footer-contact-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .footer-contact-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: var(--gold-dim);
+    text-transform: uppercase;
+  }
+  .footer-contact-value {
+    font-size: 12px;
+    color: var(--white-dim);
+  }
+
+  /* Footer newsletter placeholder */
+  .footer-newsletter {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+  .footer-newsletter p {
+    font-size: 11px;
+    color: var(--white-dim);
+    margin-bottom: 12px;
+    line-height: 1.6;
+  }
+  .footer-input-row {
+    display: flex;
+    gap: 0;
+  }
+  .footer-input-row input {
+    flex: 1;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-right: none;
+    padding: 10px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    color: var(--white);
+    outline: none;
+    transition: border-color 0.3s;
+  }
+  .footer-input-row input::placeholder { color: var(--white-dim); opacity: 0.5; }
+  .footer-input-row input:focus { border-color: var(--gold-dim); }
+  .footer-input-row button {
+    padding: 10px 16px;
+    background: var(--gold);
+    border: 1px solid var(--gold);
+    color: var(--bg);
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    transition: opacity 0.3s;
+    white-space: nowrap;
+  }
+  .footer-input-row button:hover { opacity: 0.85; }
+
+  /* Footer bottom bar */
+  .footer-bottom {
+    padding: 24px 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 32px;
+  }
+  .footer-bottom-left {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: var(--white-dim);
+    opacity: 0.6;
+  }
+  .footer-bottom-links {
+    display: flex;
+    gap: 28px;
+  }
+  .footer-bottom-links a {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    color: var(--white-dim);
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: color 0.3s;
+    opacity: 0.6;
+  }
+  .footer-bottom-links a:hover { color: var(--gold); opacity: 1; }
+
+  @media (max-width: 1100px) {
+    .footer-main { grid-template-columns: 1fr 1fr; gap: 40px; }
+  }
+  @media (max-width: 900px) {
+    nav { padding: 20px 24px; }
+    .nav-links { display: none; }
+    .lang-switcher { display: none; }
+    .hamburger { display: flex !important; }
+    .hero, section { padding-left: 24px; padding-right: 24px; }
+    .about { grid-template-columns: 1fr; gap: 60px; }
+    .about-visual { height: 300px; }
+    .pillars-header { grid-template-columns: 1fr; }
+    .pillars-intro { grid-column: 1; }
+    .pillars-grid { grid-template-columns: 1fr; }
+    .stats-bar { display: none; }
+    .footer-main { grid-template-columns: 1fr; padding: 48px 24px; gap: 36px; }
+    .footer-bottom { flex-direction: column; text-align: center; padding: 20px 24px; gap: 16px; }
+    .footer-bottom-links { flex-wrap: wrap; justify-content: center; gap: 16px; }
+    .partners-grid { gap: 16px; }
+  }
+
+  /* Hamburger button */
+  .hamburger {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    width: 40px; height: 40px;
+    background: none;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    padding: 0 10px;
+    transition: border-color 0.3s;
+    flex-shrink: 0;
+    z-index: 101;
+  }
+  .hamburger:hover { border-color: var(--gold-dim); }
+  .hamburger span {
+    display: block;
+    width: 100%; height: 1px;
+    background: var(--white-dim);
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: center;
+  }
+  .hamburger.active span { background: var(--gold); }
+  .hamburger.active span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+  .hamburger.active span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+  .hamburger.active span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+  /* Mobile drawer overlay */
+  .mobile-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(4,6,15,0.6);
+    backdrop-filter: blur(4px);
+    z-index: 98;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    pointer-events: none;
+    visibility: hidden;
+  }
+  .mobile-overlay.visible {
+    opacity: 1;
+    pointer-events: all;
+    visibility: visible;
+  }
+
+  /* Mobile drawer */
+  .mobile-drawer {
+    position: fixed;
+    top: 0; right: 0; bottom: 0;
+    width: min(360px, 90vw);
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    z-index: 99;
+    transform: translateX(100%);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto;
+    flex-direction: column;
+    padding: 100px 36px 48px;
+    gap: 0;
+    display: flex;
+    visibility: hidden;
+  }
+  .mobile-drawer.open {
+    transform: translateX(0);
+    visibility: visible;
+  }
+
+  .mobile-nav-section {
+    border-bottom: 1px solid var(--border);
+    padding: 2px 0;
+  }
+  .mobile-nav-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 0;
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    color: var(--white-dim);
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: color 0.3s;
+    background: none;
+    border: none;
+    width: 100%;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .mobile-nav-link:hover { color: var(--gold); }
+  .mobile-nav-link svg {
+    width: 10px; height: 10px;
+    stroke: currentColor;
+    fill: none;
+    transition: transform 0.3s;
+    flex-shrink: 0;
+  }
+  .mobile-nav-link.mob-open svg { transform: rotate(180deg); }
+
+  .mobile-sub {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease;
+    padding-left: 12px;
+  }
+  .mobile-sub.mob-open { max-height: 300px; }
+  .mobile-sub a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 0;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--white-dim);
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: color 0.3s;
+    font-family: 'Space Mono', monospace;
+  }
+  .mobile-sub a::before {
+    content: '';
+    display: block;
+    width: 14px; height: 1px;
+    background: var(--border);
+    flex-shrink: 0;
+    transition: all 0.3s;
+  }
+  .mobile-sub a:hover { color: var(--gold); }
+  .mobile-sub a:hover::before { background: var(--gold-dim); width: 20px; }
+
+  .mobile-drawer-footer {
+    margin-top: 48px;
+    padding-top: 32px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .mobile-lang-row {
+    display: flex;
+    gap: 6px;
+  }
+  .mobile-lang-btn {
+    flex: 1;
+    padding: 10px 6px;
+    background: none;
+    border: 1px solid var(--border);
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    color: var(--white-dim);
+    cursor: pointer;
+    transition: all 0.3s;
+    text-transform: uppercase;
+  }
+  .mobile-lang-btn.active {
+    border-color: var(--gold-dim);
+    color: var(--gold);
+    background: rgba(200,169,110,0.06);
+  }
+  .mobile-lang-btn:hover { color: var(--gold); border-color: var(--gold-dim); }
+  .mobile-drawer-copy {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: var(--white-dim);
+    opacity: 0.35;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes scrollPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* Intersection observer animations */
+  .reveal {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.9s ease, transform 0.9s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .reveal-delay-1 { transition-delay: 0.1s; }
+  .reveal-delay-2 { transition-delay: 0.2s; }
+  .reveal-delay-3 { transition-delay: 0.3s; }
+
+  /* Glowing orb decorations */
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(100px);
+    pointer-events: none;
+  }
+  .orb-1 {
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(74,184,212,0.06) 0%, transparent 70%);
+    top: -100px; right: -100px;
+  }
+  .orb-2 {
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(200,169,110,0.06) 0%, transparent 70%);
+    bottom: -100px; left: -100px;
+  }
+
+  /* Language specific display */
+  .zh { display: block; }
+  .en { display: none; }
+  .ja { display: none; }
+
+  html[lang="en"] .zh { display: none; }
+  html[lang="en"] .en { display: block; }
+  html[lang="en"] .ja { display: none; }
+
+  html[lang="ja"] .zh { display: none; }
+  html[lang="ja"] .en { display: none; }
+  html[lang="ja"] .ja { display: block; }
+
+  /* For inline elements */
+  .zh-inline { display: inline; }
+  .en-inline { display: none; }
+  .ja-inline { display: none; }
+
+  html[lang="en"] .zh-inline { display: none; }
+  html[lang="en"] .en-inline { display: inline; }
+  html[lang="ja"] .zh-inline { display: none; }
+  html[lang="ja"] .ja-inline { display: inline; }
+
+</style>
+</head>
+<body>
+
+<!-- Custom cursor -->
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- Background canvas -->
+<canvas id="canvas"></canvas>
+
+<!-- Navigation -->
+<nav id="nav">
+  <a href="#" class="logo">
+    <div class="logo-mark"></div>
+    NEXUS AI
+  </a>
+  <ul class="nav-links">
+    <li class="nav-item">
+      <a href="#about" data-i18n="nav_about"></a>
+    </li>
+    <li class="nav-item" id="navResearch">
+      <button class="nav-link-btn" onclick="toggleNav('navResearch')">
+        <span data-i18n="nav_research"></span>
+        <svg viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg"><path d="M1 1l4 4 4-4" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="nav-sub">
+        <a href="#" data-i18n="nav_research_sub1"></a>
+        <a href="#" data-i18n="nav_research_sub2"></a>
+        <a href="#" data-i18n="nav_research_sub3"></a>
+      </div>
+    </li>
+    <li class="nav-item" id="navIndustry">
+      <button class="nav-link-btn" onclick="toggleNav('navIndustry')">
+        <span data-i18n="nav_industry"></span>
+        <svg viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg"><path d="M1 1l4 4 4-4" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="nav-sub">
+        <a href="#" data-i18n="nav_industry_sub1"></a>
+        <a href="#" data-i18n="nav_industry_sub2"></a>
+        <a href="#" data-i18n="nav_industry_sub3"></a>
+      </div>
+    </li>
+    <li class="nav-item" id="navInvest">
+      <button class="nav-link-btn" onclick="toggleNav('navInvest')">
+        <span data-i18n="nav_invest"></span>
+        <svg viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg"><path d="M1 1l4 4 4-4" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="nav-sub">
+        <a href="#" data-i18n="nav_invest_sub1"></a>
+        <a href="#" data-i18n="nav_invest_sub2"></a>
+        <a href="#" data-i18n="nav_invest_sub3"></a>
+      </div>
+    </li>
+    <li class="nav-item">
+      <a href="#contact" data-i18n="nav_contact"></a>
+    </li>
+  </ul>
+  <div class="lang-switcher" id="langSwitcher">
+    <button class="lang-trigger" onclick="toggleLangDropdown()">
+      <svg class="lang-globe" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="8" cy="8" r="6.5" stroke-width="1"/>
+        <path d="M8 1.5C8 1.5 5.5 4 5.5 8s2.5 6.5 2.5 6.5M8 1.5C8 1.5 10.5 4 10.5 8S8 14.5 8 14.5" stroke-width="1"/>
+        <path d="M1.5 8h13" stroke-width="1"/>
+        <path d="M2.5 5h11M2.5 11h11" stroke-width="1"/>
+      </svg>
+      <span id="langLabel">中文</span>
+      <svg viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg"><path d="M1 1l4 4 4-4" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="lang-dropdown">
+      <button class="lang-option active" onclick="setLang('zh')" id="opt-zh">
+        <span class="lang-flag">🇨🇳</span> 中文
+      </button>
+      <button class="lang-option" onclick="setLang('en')" id="opt-en">
+        <span class="lang-flag">🌐</span> English
+      </button>
+      <button class="lang-option" onclick="setLang('ja')" id="opt-ja">
+        <span class="lang-flag">🇯🇵</span> 日本語
+      </button>
+    </div>
+  </div>
+  <!-- Hamburger (mobile only) -->
+  <button class="hamburger" id="hamburger" onclick="toggleDrawer()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- Mobile overlay -->
+<div class="mobile-overlay" id="mobileOverlay" onclick="closeDrawer()"></div>
+
+<!-- Mobile drawer -->
+<div class="mobile-drawer" id="mobileDrawer">
+  <!-- Nav items -->
+  <div class="mobile-nav-section">
+    <a href="#about" class="mobile-nav-link" onclick="closeDrawer()" data-i18n="nav_about"></a>
+  </div>
+  <div class="mobile-nav-section">
+    <button class="mobile-nav-link" onclick="toggleMobileSub('mobResearch', this)">
+      <span data-i18n="nav_research"></span>
+      <svg viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg"><path d="M1 1l4 4 4-4" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="mobile-sub" id="mobResearch">
+      <a href="#" onclick="closeDrawer()" data-i18n="nav_research_sub1"></a>
+      <a href="#" onclick="closeDrawer()" data-i18n="nav_research_sub2"></a>
+      <a href="#" onclick="closeDrawer()" data-i18n="nav_research_sub3"></a>
+    </div>
+  </div>
+  <div class="mobile-nav-section">
+    <button class="mobile-nav-link" onclick="toggleMobileSub('mobIndustry', this)">
+      <span data-i18n="nav_industry"></span>
+      <svg viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg"><path d="M1 1l4 4 4-4" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="mobile-sub" id="mobIndustry">
+      <a href="#" onclick="closeDrawer()" data-i18n="nav_industry_sub1"></a>
+      <a href="#" onclick="closeDrawer()" data-i18n="nav_industry_sub2"></a>
+      <a href="#" onclick="closeDrawer()" data-i18n="nav_industry_sub3"></a>
+    </div>
+  </div>
+  <div class="mobile-nav-section">
+    <button class="mobile-nav-link" onclick="toggleMobileSub('mobInvest', this)">
+      <span data-i18n="nav_invest"></span>
+      <svg viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg"><path d="M1 1l4 4 4-4" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="mobile-sub" id="mobInvest">
+      <a href="#" onclick="closeDrawer()" data-i18n="nav_invest_sub1"></a>
+      <a href="#" onclick="closeDrawer()" data-i18n="nav_invest_sub2"></a>
+      <a href="#" onclick="closeDrawer()" data-i18n="nav_invest_sub3"></a>
+    </div>
+  </div>
+  <div class="mobile-nav-section">
+    <a href="#contact" class="mobile-nav-link" onclick="closeDrawer()" data-i18n="nav_contact"></a>
+  </div>
+
+  <!-- Footer of drawer -->
+  <div class="mobile-drawer-footer">
+    <div class="mobile-lang-row">
+      <button class="mobile-lang-btn active" id="mob-opt-zh" onclick="setLang('zh')">🇨🇳 中文</button>
+      <button class="mobile-lang-btn" id="mob-opt-en" onclick="setLang('en')">🌐 EN</button>
+      <button class="mobile-lang-btn" id="mob-opt-ja" onclick="setLang('ja')">🇯🇵 日本語</button>
+    </div>
+    <div class="mobile-drawer-copy">© 2026 NEXUS AI INSTITUTE</div>
+  </div>
+</div>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="hero-label" data-i18n="hero_label"></div>
+  <h1 class="hero-title">
+    <span class="zh hero-title-zh">塑造<em>智能</em>文明<br>的未来图景</span>
+    <span class="en">Shaping The Future<br>Of <em>Intelligence</em></span>
+    <span class="ja">知能文明の<br><em>未来</em>を築く</span>
+  </h1>
+  <p class="hero-desc" data-i18n="hero_desc"></p>
+  <div class="hero-cta">
+    <a href="#pillars" class="btn-primary"><span data-i18n="hero_cta_primary"></span></a>
+    <a href="#about" class="btn-text" data-i18n="hero_cta_secondary"></a>
+  </div>
+
+  <div class="scroll-indicator">
+    <div class="scroll-line"></div>
+    <span class="scroll-text" data-i18n="scroll"></span>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat-item">
+      <div class="stat-num">2019</div>
+      <div class="stat-label" data-i18n="stat_founded"></div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">47+</div>
+      <div class="stat-label" data-i18n="stat_researchers"></div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">18</div>
+      <div class="stat-label" data-i18n="stat_countries"></div>
+    </div>
+  </div>
+</section>
+
+<!-- About -->
+<section class="about" id="about">
+  <div>
+    <div class="section-tag" data-i18n="about_tag"></div>
+    <h2 class="section-title reveal">
+      <span class="zh section-title-zh">洞见技术<br>引领变革</span>
+      <span class="en">Insight Into<br>Intelligence</span>
+      <span class="ja">技術を洞察し<br>変革を牽引する</span>
+    </h2>
+    <p class="about-text reveal reveal-delay-1" data-i18n="about_text"></p>
+  </div>
+  <div class="about-visual reveal reveal-delay-2">
+    <svg class="hexgrid" viewBox="0 0 400 500" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="hexGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#c8a96e" stop-opacity="0.6"/>
+          <stop offset="100%" stop-color="#4ab8d4" stop-opacity="0.2"/>
+        </linearGradient>
+      </defs>
+      <!-- Animated hex grid -->
+      <g stroke="url(#hexGrad)" stroke-width="0.8" fill="none" opacity="0.7">
+        <polygon points="100,20 140,44 140,92 100,116 60,92 60,44" class="hex-anim" style="animation-delay:0s"/>
+        <polygon points="180,20 220,44 220,92 180,116 140,92 140,44" class="hex-anim" style="animation-delay:0.3s"/>
+        <polygon points="260,20 300,44 300,92 260,116 220,92 220,44" class="hex-anim" style="animation-delay:0.6s"/>
+        <polygon points="60,116 100,140 100,188 60,212 20,188 20,140" class="hex-anim" style="animation-delay:0.2s"/>
+        <polygon points="140,116 180,140 180,188 140,212 100,188 100,140" class="hex-anim" style="animation-delay:0.5s"/>
+        <polygon points="220,116 260,140 260,188 220,212 180,188 180,140" class="hex-anim" style="animation-delay:0.8s"/>
+        <polygon points="300,116 340,140 340,188 300,212 260,188 260,140" class="hex-anim" style="animation-delay:0.1s"/>
+        <polygon points="100,212 140,236 140,284 100,308 60,284 60,236" class="hex-anim" style="animation-delay:0.4s"/>
+        <polygon points="180,212 220,236 220,284 180,308 140,284 140,236" class="hex-anim" style="animation-delay:0.7s"/>
+        <polygon points="260,212 300,236 300,284 260,308 220,284 220,236" class="hex-anim" style="animation-delay:0.9s"/>
+        <polygon points="60,308 100,332 100,380 60,404 20,380 20,332" class="hex-anim" style="animation-delay:0.3s"/>
+        <polygon points="140,308 180,332 180,380 140,404 100,380 100,332" class="hex-anim" style="animation-delay:0.6s"/>
+        <polygon points="220,308 260,332 260,380 220,404 180,380 180,332" class="hex-anim" style="animation-delay:0.1s"/>
+        <polygon points="300,308 340,332 340,380 300,404 260,380 260,332" class="hex-anim" style="animation-delay:0.5s"/>
+      </g>
+      <!-- Center glow -->
+      <circle cx="190" cy="250" r="80" fill="rgba(74,184,212,0.04)" stroke="rgba(74,184,212,0.3)" stroke-width="0.5"/>
+      <circle cx="190" cy="250" r="50" fill="rgba(200,169,110,0.06)" stroke="rgba(200,169,110,0.4)" stroke-width="0.5"/>
+      <circle cx="190" cy="250" r="4" fill="#c8a96e" opacity="0.8"/>
+    </svg>
+    <style>
+      .hex-anim { animation: hexPulse 4s ease-in-out infinite; }
+      @keyframes hexPulse {
+        0%, 100% { opacity: 0.4; stroke-width: 0.8; }
+        50% { opacity: 1; stroke-width: 1.2; }
+      }
+    </style>
+  </div>
+</section>
+
+<!-- Three Pillars -->
+<section class="pillars-section" id="pillars">
+  <div class="pillars-header">
+    <div>
+      <div class="section-tag reveal" data-i18n="pillars_tag"></div>
+      <h2 class="section-title reveal reveal-delay-1">
+        <span class="zh section-title-zh">三大核心<br>战略方向</span>
+        <span class="en">Three Core<br>Strategic Pillars</span>
+        <span class="ja">三つの戦略的<br>中核方向</span>
+      </h2>
+    </div>
+    <p class="pillars-intro reveal reveal-delay-2" data-i18n="pillars_intro"></p>
+  </div>
+
+  <div class="pillars-grid">
+    <!-- Research -->
+    <div class="pillar reveal">
+      <div class="pillar-num">01</div>
+      <svg class="pillar-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="20" cy="20" r="12" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M29 29L40 40" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M20 14V20L24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="20" cy="20" r="2" fill="currentColor"/>
+      </svg>
+      <div class="pillar-name">
+        <span class="zh section-title-zh">研究</span>
+        <span class="en">Research</span>
+        <span class="ja">研究</span>
+      </div>
+      <div class="pillar-en">FRONTIER RESEARCH</div>
+      <p class="pillar-desc" data-i18n="pillar_research_desc"></p>
+      <div class="pillar-arrow">→</div>
+    </div>
+
+    <!-- Industry -->
+    <div class="pillar reveal reveal-delay-1">
+      <div class="pillar-num">02</div>
+      <svg class="pillar-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="8" y="28" width="8" height="14" stroke="currentColor" stroke-width="1.5"/>
+        <rect x="20" y="20" width="8" height="22" stroke="currentColor" stroke-width="1.5"/>
+        <rect x="32" y="12" width="8" height="30" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M6 42H42" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M8 20L20 14L32 8" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-dasharray="2 2"/>
+      </svg>
+      <div class="pillar-name">
+        <span class="zh section-title-zh">产业</span>
+        <span class="en">Industry</span>
+        <span class="ja">産業</span>
+      </div>
+      <div class="pillar-en">INDUSTRY TRANSFORMATION</div>
+      <p class="pillar-desc" data-i18n="pillar_industry_desc"></p>
+      <div class="pillar-arrow">→</div>
+    </div>
+
+    <!-- Investment -->
+    <div class="pillar reveal reveal-delay-2">
+      <div class="pillar-num">03</div>
+      <svg class="pillar-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="24,6 42,36 6,36" stroke="currentColor" stroke-width="1.5" fill="none"/>
+        <path d="M24 18V28" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="24" cy="32" r="1.5" fill="currentColor"/>
+        <path d="M14 42C14 42 19 38 24 38C29 38 34 42 34 42" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+      </svg>
+      <div class="pillar-name">
+        <span class="zh section-title-zh">投资</span>
+        <span class="en">Investment</span>
+        <span class="ja">投資</span>
+      </div>
+      <div class="pillar-en">STRATEGIC INVESTMENT</div>
+      <p class="pillar-desc" data-i18n="pillar_investment_desc"></p>
+      <div class="pillar-arrow">→</div>
+    </div>
+  </div>
+</section>
+
+<!-- Manifesto -->
+<section class="manifesto" id="vision">
+  <div class="section-tag" style="justify-content: center; margin-bottom: 60px;" data-i18n="manifesto_tag"></div>
+  <blockquote class="manifesto-quote reveal">
+    <span class="zh manifesto-quote-zh">人工智能不仅是一项技术，<br>它是人类认知能力的延伸，<br>是通往更广阔文明的桥梁。</span>
+    <span class="en">Artificial intelligence is not merely technology —<br>it is an extension of human cognition,<br>a bridge toward a vaster civilization.</span>
+    <span class="ja">人工知能は単なる技術ではなく、<br>人間の認知能力の拡張であり、<br>より広大な文明への橋である。</span>
+  </blockquote>
+  <div class="manifesto-divider"></div>
+  <div class="manifesto-author">NEXUS AI — <span data-i18n="manifesto_author"></span></div>
+</section>
+
+<!-- Timeline / Vision -->
+<section class="timeline-section">
+  <div class="section-tag reveal" data-i18n="timeline_tag"></div>
+  <h2 class="section-title reveal reveal-delay-1">
+    <span class="zh section-title-zh">AI 演进<br>时代坐标</span>
+    <span class="en">The AI<br>Evolutionary Arc</span>
+    <span class="ja">AI進化の<br>時代座標</span>
+  </h2>
+  <div class="timeline">
+    <div class="timeline-item reveal">
+      <div class="timeline-year">2019 — 2022</div>
+      <div class="timeline-title">
+        <span class="zh">基础突破时代</span>
+        <span class="en">Era of Foundational Breakthroughs</span>
+        <span class="ja">基礎突破の時代</span>
+      </div>
+      <p class="timeline-desc" data-i18n="timeline_1"></p>
+    </div>
+    <div class="timeline-item reveal reveal-delay-1">
+      <div class="timeline-year">2023 — 2025</div>
+      <div class="timeline-title">
+        <span class="zh">规模化应用时代</span>
+        <span class="en">Era of Scaled Deployment</span>
+        <span class="ja">スケール化応用の時代</span>
+      </div>
+      <p class="timeline-desc" data-i18n="timeline_2"></p>
+    </div>
+    <div class="timeline-item reveal reveal-delay-2">
+      <div class="timeline-year">2026 — <span data-i18n="future"></span></div>
+      <div class="timeline-title">
+        <span class="zh">通用智能新纪元</span>
+        <span class="en">The AGI New Epoch</span>
+        <span class="ja">汎用知能の新時代</span>
+      </div>
+      <p class="timeline-desc" data-i18n="timeline_3"></p>
+    </div>
+  </div>
+</section>
+
+<!-- Partners -->
+<section class="partners-section">
+  <div class="section-tag" style="justify-content: center;" data-i18n="partners_tag"></div>
+  <h2 class="section-title reveal" style="margin-bottom: 0;">
+    <span class="zh section-title-zh">全球合作网络</span>
+    <span class="en">Global Partnership Network</span>
+    <span class="ja">グローバルパートナーネットワーク</span>
+  </h2>
+  <div class="partners-grid">
+    <div class="partner-item reveal">STANFORD HAI</div>
+    <div class="partner-item reveal reveal-delay-1">MIT CSAIL</div>
+    <div class="partner-item reveal reveal-delay-2">OXFORD FUTURE</div>
+    <div class="partner-item reveal">TSINGHUA INAI</div>
+    <div class="partner-item reveal reveal-delay-1">RIKEN AIP</div>
+    <div class="partner-item reveal reveal-delay-2">ETHZ AI CENTER</div>
+  </div>
+</section>
+
+<!-- Footer CTA -->
+<section class="footer-cta" id="contact">
+  <div class="section-tag" style="justify-content: center;" data-i18n="contact_tag"></div>
+  <h2 class="section-title reveal">
+    <span class="zh section-title-zh">共建智能<br>文明新纪元</span>
+    <span class="en">Join Us In Building<br>The New Era</span>
+    <span class="ja">共に新時代を<br>築きましょう</span>
+  </h2>
+  <p class="reveal" data-i18n="contact_desc"></p>
+  <div class="hero-cta" style="justify-content: center;" class="reveal">
+    <a href="/cdn-cgi/l/email-protection#d9bab6b7adb8baad99b7bca1acaab8b0f7b0b7aaadb0adacadbc" class="btn-primary"><span data-i18n="contact_cta"></span></a>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <!-- Footer Main -->
+  <div class="footer-main">
+    <!-- Brand col -->
+    <div class="footer-brand">
+      <a href="#" class="logo">
+        <div class="logo-mark"></div>
+        NEXUS AI
+      </a>
+      <p data-i18n="footer_brand_desc"></p>
+      <div class="footer-social">
+        <a href="#" class="social-link" title="LinkedIn">in</a>
+        <a href="#" class="social-link" title="X / Twitter">𝕏</a>
+        <a href="#" class="social-link" title="GitHub">gh</a>
+        <a href="#" class="social-link" title="Email">@</a>
+      </div>
+    </div>
+
+    <!-- Navigation col -->
+    <div>
+      <div class="footer-col-title" data-i18n="footer_col_nav"></div>
+      <ul class="footer-col-links">
+        <li><a href="#about" data-i18n="nav_about"></a></li>
+        <li><a href="#pillars" data-i18n="nav_research"></a></li>
+        <li><a href="#pillars" data-i18n="nav_industry"></a></li>
+        <li><a href="#pillars" data-i18n="nav_invest"></a></li>
+        <li><a href="#vision" data-i18n="nav_vision_plain"></a></li>
+        <li><a href="#contact" data-i18n="nav_contact"></a></li>
+      </ul>
+    </div>
+
+    <!-- Resources col -->
+    <div>
+      <div class="footer-col-title" data-i18n="footer_col_resources"></div>
+      <ul class="footer-col-links">
+        <li><a href="#" data-i18n="footer_res_1"></a></li>
+        <li><a href="#" data-i18n="footer_res_2"></a></li>
+        <li><a href="#" data-i18n="footer_res_3"></a></li>
+        <li><a href="#" data-i18n="footer_res_4"></a></li>
+        <li><a href="#" data-i18n="footer_res_5"></a></li>
+      </ul>
+    </div>
+
+    <!-- Contact col -->
+    <div>
+      <div class="footer-col-title" data-i18n="footer_col_contact"></div>
+      <div class="footer-contact-info">
+        <div class="footer-contact-item">
+          <span class="footer-contact-label" data-i18n="footer_hq_label"></span>
+          <span class="footer-contact-value" data-i18n="footer_hq_value"></span>
+        </div>
+        <div class="footer-contact-item">
+          <span class="footer-contact-label" data-i18n="footer_email_label"></span>
+          <span class="footer-contact-value"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="f0939f9e84919384b09e958885839199de999e83849984858495">[email&#160;protected]</a></span>
+        </div>
+        <div class="footer-contact-item">
+          <span class="footer-contact-label" data-i18n="footer_media_label"></span>
+          <span class="footer-contact-value"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="522220372121123c372a2721333b7c3b3c21263b26272637">[email&#160;protected]</a></span>
+        </div>
+      </div>
+      <!-- Newsletter placeholder -->
+      <div class="footer-newsletter">
+        <p data-i18n="footer_newsletter_desc"></p>
+        <div class="footer-input-row">
+          <input type="email" data-i18n-placeholder="footer_email_placeholder" placeholder="your@email.com" />
+          <button data-i18n="footer_subscribe"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer Bottom Bar -->
+  <div class="footer-bottom">
+    <div class="footer-bottom-left">
+      © 2026 NEXUS AI INSTITUTE — <span data-i18n="footer_rights"></span>
+    </div>
+    <div class="footer-bottom-links">
+      <a href="#" data-i18n="footer_privacy"></a>
+      <a href="#" data-i18n="footer_terms"></a>
+      <a href="#" data-i18n="footer_cookie"></a>
+      <a href="#" data-i18n="footer_sitemap"></a>
+    </div>
+  </div>
+</footer>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+// ============ i18n DATA ============
+const i18n = {
+  zh: {
+    nav_about: '关于我们',
+    nav_research: '研究', nav_research_sub1: '基础模型研究', nav_research_sub2: '具身智能', nav_research_sub3: '安全与对齐',
+    nav_industry: '产业', nav_industry_sub1: '智能制造', nav_industry_sub2: '医疗健康', nav_industry_sub3: '金融科技',
+    nav_invest: '投资', nav_invest_sub1: '早期孵化', nav_invest_sub2: '成长期投资', nav_invest_sub3: '生态合作',
+    nav_vision_plain: '愿景',
+    nav_contact: '联系我们',
+    hero_label: '下一代人工智能研究院',
+    hero_desc: 'Nexus AI 致力于探索人工智能的深层规律，融合前沿研究、产业赋能与战略投资，推动人类迈向更智慧的文明形态。',
+    hero_cta_primary: '探索三大方向', hero_cta_secondary: '了解我们',
+    scroll: '向下滚动',
+    stat_founded: '成立年份', stat_researchers: '顶尖研究员', stat_countries: '覆盖国家',
+    about_tag: '关于 Nexus AI',
+    about_text: 'Nexus AI 研究院成立于 2019 年，汇聚了来自全球顶尖机构的科学家、工程师与战略家。我们坚信，人工智能的正确发展方向，需要严谨的科学精神、深刻的产业理解以及负责任的资本引导三者合一。在这个智能革命的关键时刻，我们选择站在最前沿，承担属于这个时代的历史责任。',
+    pillars_tag: '核心战略方向',
+    pillars_intro: '我们构建了研究、产业、投资三位一体的战略生态体系，以系统性思维应对人类智能化转型中最复杂的挑战，探索AI带来的无限可能。',
+    pillar_research_desc: '深入基础模型、具身智能、多模态推理等前沿领域研究，发表高影响力学术成果，推动AI技术边界的持续延伸，探索通用人工智能的底层架构与安全路径。',
+    pillar_industry_desc: '与全球顶尖企业协同，将前沿AI技术转化为可落地的行业解决方案，在制造、医疗、能源、金融等关键领域推动深度智能化变革，重塑产业格局。',
+    pillar_investment_desc: '以科学判断力和长期主义视野，精准识别并扶持具有颠覆性潜力的AI创业项目，构建覆盖全球的智能经济生态网络，为未来播种。',
+    manifesto_tag: '我们的信念',
+    manifesto_author: '2026 年战略宣言',
+    timeline_tag: '发展历程与愿景',
+    timeline_1: '大语言模型与深度学习范式确立，奠定现代AI的理论与技术基础。Nexus AI 在此阶段完成核心研究团队的构建与基础理论布局。',
+    timeline_2: 'AI 技术从实验室走向规模化商业应用，深度融入社会各个层面。Nexus AI 建立产业合作网络，推动技术落地与生态繁荣。',
+    timeline_3: '我们正站在通用人工智能崛起的前夜。Nexus AI 持续投入前沿研究，引导负责任的AGI发展，构建人机协同共生的智慧文明新秩序。',
+    future: '未来',
+    partners_tag: '合作伙伴',
+    contact_tag: '开启合作',
+    contact_desc: '无论您代表学术机构、产业龙头还是投资机构，我们期待与志同道合的伙伴共同探索AI的无限未来。',
+    contact_cta: '联系我们',
+    footer_rights: '保留所有权利',
+    footer_privacy: '隐私政策', footer_terms: '使用条款', footer_contact: '联系我们',
+    footer_cookie: 'Cookie 政策', footer_sitemap: '网站地图',
+    footer_brand_desc: 'Nexus AI 研究院融合前沿研究、产业赋能与战略投资，推动人类迈向更智慧的文明形态。',
+    footer_col_nav: '快速导航', footer_col_resources: '资源中心', footer_col_contact: '联系与合作',
+    footer_res_1: '研究报告', footer_res_2: '学术论文', footer_res_3: '行业白皮书', footer_res_4: '年度报告', footer_res_5: '媒体中心',
+    footer_hq_label: '总部', footer_hq_value: '北京 · 新加坡 · 旧金山',
+    footer_email_label: '通用邮箱', footer_media_label: '媒体询问',
+    footer_newsletter_desc: '订阅我们的前沿资讯，获取最新AI研究与产业动态。',
+    footer_email_placeholder: '您的邮箱地址', footer_subscribe: '订阅',
+  },
+  en: {
+    nav_about: 'About',
+    nav_research: 'Research', nav_research_sub1: 'Foundation Models', nav_research_sub2: 'Embodied Intelligence', nav_research_sub3: 'Safety & Alignment',
+    nav_industry: 'Industry', nav_industry_sub1: 'Smart Manufacturing', nav_industry_sub2: 'Healthcare AI', nav_industry_sub3: 'FinTech',
+    nav_invest: 'Investment', nav_invest_sub1: 'Early Stage', nav_invest_sub2: 'Growth Capital', nav_invest_sub3: 'Ecosystem Partners',
+    nav_vision_plain: 'Vision',
+    nav_contact: 'Contact',
+    hero_label: 'NEXT-GENERATION AI INSTITUTE',
+    hero_desc: 'Nexus AI Institute is dedicated to exploring the deep principles of artificial intelligence — bridging frontier research, industry transformation, and strategic investment to guide humanity toward a more intelligent civilization.',
+    hero_cta_primary: 'Explore Our Pillars', hero_cta_secondary: 'Learn About Us',
+    scroll: 'SCROLL',
+    stat_founded: 'FOUNDED', stat_researchers: 'RESEARCHERS', stat_countries: 'COUNTRIES',
+    about_tag: 'ABOUT NEXUS AI',
+    about_text: 'Founded in 2019, Nexus AI Institute brings together scientists, engineers, and strategists from the world\'s foremost institutions. We believe the right path for artificial intelligence demands rigorous science, deep industry understanding, and responsible capital guidance — unified in purpose. At this pivotal moment of the intelligence revolution, we choose to stand at the frontier and bear the historical responsibility this era demands.',
+    pillars_tag: 'CORE STRATEGIC PILLARS',
+    pillars_intro: 'We have built a tripartite strategic ecosystem integrating research, industry, and investment — applying systemic thinking to humanity\'s most complex challenges in the age of intelligent transformation.',
+    pillar_research_desc: 'Advancing frontier research in foundation models, embodied intelligence, and multimodal reasoning. We publish high-impact results and continuously push the boundaries of AI — exploring the foundational architectures and safety pathways toward general artificial intelligence.',
+    pillar_industry_desc: 'Collaborating with leading global enterprises to translate frontier AI into deployable industry solutions. We drive deep intelligent transformation across manufacturing, healthcare, energy, and finance — reshaping entire industrial landscapes.',
+    pillar_investment_desc: 'Guided by scientific judgment and long-term thinking, we identify and support AI ventures with disruptive potential. We are building a global intelligent economy ecosystem — planting seeds for the future.',
+    manifesto_tag: 'OUR MANIFESTO',
+    manifesto_author: 'STRATEGIC DECLARATION 2026',
+    timeline_tag: 'TIMELINE & VISION',
+    timeline_1: 'Large language models and deep learning paradigms were established, laying the theoretical and technical foundations of modern AI. Nexus AI completed its core research team and foundational theory layout during this period.',
+    timeline_2: 'AI technology moved from the laboratory to large-scale commercial applications, deeply integrating into every layer of society. Nexus AI built its industry cooperation network, driving technology adoption and ecosystem growth.',
+    timeline_3: 'We stand on the eve of general artificial intelligence\'s emergence. Nexus AI continues to invest in frontier research, guiding the responsible development of AGI and building a new intelligent civilization order of human-machine symbiosis.',
+    future: 'FUTURE',
+    partners_tag: 'GLOBAL PARTNERS',
+    contact_tag: 'INITIATE COLLABORATION',
+    contact_desc: 'Whether you represent an academic institution, an industry leader, or an investment organization — we welcome visionary partners to explore the limitless future of AI together.',
+    contact_cta: 'Get In Touch',
+    footer_rights: 'ALL RIGHTS RESERVED',
+    footer_privacy: 'PRIVACY', footer_terms: 'TERMS', footer_contact: 'CONTACT',
+    footer_cookie: 'COOKIES', footer_sitemap: 'SITEMAP',
+    footer_brand_desc: 'Nexus AI Institute bridges frontier research, industry transformation, and strategic investment to guide humanity toward a more intelligent civilization.',
+    footer_col_nav: 'Navigation', footer_col_resources: 'Resources', footer_col_contact: 'Contact & Partners',
+    footer_res_1: 'Research Reports', footer_res_2: 'Academic Papers', footer_res_3: 'Industry Whitepapers', footer_res_4: 'Annual Report', footer_res_5: 'Press Room',
+    footer_hq_label: 'Headquarters', footer_hq_value: 'Beijing · Singapore · San Francisco',
+    footer_email_label: 'General Inquiries', footer_media_label: 'Media & Press',
+    footer_newsletter_desc: 'Subscribe for frontier insights on AI research and industry developments.',
+    footer_email_placeholder: 'your@email.com', footer_subscribe: 'Subscribe',
+  },
+  ja: {
+    nav_about: '私たちについて',
+    nav_research: '研究', nav_research_sub1: '基盤モデル研究', nav_research_sub2: '身体的知能', nav_research_sub3: '安全性と整合',
+    nav_industry: '産業', nav_industry_sub1: 'スマート製造', nav_industry_sub2: 'ヘルスケアAI', nav_industry_sub3: 'フィンテック',
+    nav_invest: '投資', nav_invest_sub1: 'アーリーステージ', nav_invest_sub2: '成長投資', nav_invest_sub3: 'エコシステム',
+    nav_vision_plain: 'ビジョン',
+    nav_contact: 'お問い合わせ',
+    hero_label: '次世代AI研究院',
+    hero_desc: 'Nexus AI研究院は人工知能の深層原理を探求し、フロンティア研究・産業変革・戦略投資を統合して、より知的な文明へ人類を導きます。',
+    hero_cta_primary: '三つの方向を探る', hero_cta_secondary: '詳しく知る',
+    scroll: 'スクロール',
+    stat_founded: '設立年', stat_researchers: '研究者数', stat_countries: '対応国数',
+    about_tag: 'NEXUS AIについて',
+    about_text: '2019年に設立されたNexus AI研究院は、世界トップ機関の科学者・エンジニア・戦略家を結集しています。人工知能の正しい発展には、厳密な科学精神、深い産業理解、責任ある資本誘導の三つが不可欠と信じています。知能革命の重要な局面において、私たちは最前線に立ち、この時代が求める歴史的責任を担います。',
+    pillars_tag: '中核戦略方向',
+    pillars_intro: '研究・産業・投資の三位一体戦略エコシステムを構築し、人類の知能化転換における最も複雑な課題にシステム的思考で取り組み、AIの無限の可能性を探求します。',
+    pillar_research_desc: '基盤モデル、身体的知能、マルチモーダル推論などのフロンティア領域を深く研究。高影響力の学術成果を発表し、AI技術の境界を継続的に拡張します。',
+    pillar_industry_desc: '世界トップ企業と協力し、フロンティアAI技術を実用的な業界ソリューションに変換。製造・医療・エネルギー・金融などの分野で深度知能化変革を推進します。',
+    pillar_investment_desc: '科学的判断力と長期主義的視野で、破壊的潜力を持つAIスタートアップを精確に識別・支援。グローバルな知能経済エコシステムを構築し、未来に種を蒔きます。',
+    manifesto_tag: '私たちの信念',
+    manifesto_author: '2026年戦略宣言',
+    timeline_tag: '発展歴程とビジョン',
+    timeline_1: '大規模言語モデルと深層学習パラダイムが確立され、現代AIの理論的・技術的基盤が整いました。この期間、Nexus AIは中核研究チームと基礎理論の構築を完了しました。',
+    timeline_2: 'AI技術が実験室から大規模商業応用へ移行し、社会のあらゆる層に深く融合しました。Nexus AIは産業協力ネットワークを構築し、技術の普及とエコシステムの繁栄を推進しました。',
+    timeline_3: '私たちは汎用人工知能台頭の前夜に立っています。Nexus AIはフロンティア研究への投資を継続し、責任あるAGI開発を導き、人間とAIが共生する新しい知的文明秩序を構築します。',
+    future: '未来へ',
+    partners_tag: 'グローバルパートナー',
+    contact_tag: '連携を始める',
+    contact_desc: '学術機関、産業リーダー、投資機関を問わず、志を同じくするパートナーと共にAIの無限の未来を探求したいと思います。',
+    contact_cta: 'お問い合わせ',
+    footer_rights: '全著作権所有',
+    footer_privacy: 'プライバシー', footer_terms: '利用規約', footer_contact: 'お問い合わせ',
+    footer_cookie: 'Cookie', footer_sitemap: 'サイトマップ',
+    footer_brand_desc: 'Nexus AI研究院は、フロンティア研究・産業変革・戦略投資を統合し、より知的な文明へ人類を導きます。',
+    footer_col_nav: 'ナビゲーション', footer_col_resources: 'リソース', footer_col_contact: '連絡先・提携',
+    footer_res_1: '研究報告書', footer_res_2: '学術論文', footer_res_3: '業界白書', footer_res_4: '年次報告書', footer_res_5: 'プレスルーム',
+    footer_hq_label: '本部所在地', footer_hq_value: '北京・シンガポール・サンフランシスコ',
+    footer_email_label: '一般お問い合わせ', footer_media_label: 'メディア・報道関係',
+    footer_newsletter_desc: 'AI研究と産業動向の最前線情報をお届けします。',
+    footer_email_placeholder: 'メールアドレス', footer_subscribe: '登録',
+  }
+};
+
+// ============ LANGUAGE SYSTEM ============
+function setLang(lang) {
+  document.documentElement.lang = lang;
+  // Update lang options active state
+  ['zh','en','ja'].forEach(l => {
+    const el = document.getElementById('opt-' + l);
+    if (el) el.classList.toggle('active', l === lang);
+    const mob = document.getElementById('mob-opt-' + l);
+    if (mob) mob.classList.toggle('active', l === lang);
+  });
+  // Update trigger label
+  const labels = { zh: '中文', en: 'English', ja: '日本語' };
+  const labelEl = document.getElementById('langLabel');
+  if (labelEl) labelEl.textContent = labels[lang];
+  // Close dropdown
+  const sw = document.getElementById('langSwitcher');
+  if (sw) sw.classList.remove('open');
+  // Apply translations
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (i18n[lang] && i18n[lang][key]) el.textContent = i18n[lang][key];
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    if (i18n[lang] && i18n[lang][key]) el.placeholder = i18n[lang][key];
+  });
+  localStorage.setItem('nexus_lang', lang);
+}
+
+function toggleLangDropdown() {
+  const sw = document.getElementById('langSwitcher');
+  sw.classList.toggle('open');
+}
+
+function toggleNav(id) {
+  const item = document.getElementById(id);
+  const wasOpen = item.classList.contains('open');
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('open'));
+  if (!wasOpen) item.classList.add('open');
+}
+
+// Mobile drawer
+function toggleDrawer() {
+  const drawer = document.getElementById('mobileDrawer');
+  const overlay = document.getElementById('mobileOverlay');
+  const hamburger = document.getElementById('hamburger');
+  const isOpen = drawer.classList.contains('open');
+  if (isOpen) {
+    closeDrawer();
+  } else {
+    drawer.classList.add('open');
+    overlay.classList.add('visible');
+    hamburger.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+function closeDrawer() {
+  const drawer = document.getElementById('mobileDrawer');
+  const overlay = document.getElementById('mobileOverlay');
+  const hamburger = document.getElementById('hamburger');
+  drawer.classList.remove('open');
+  overlay.classList.remove('visible');
+  hamburger.classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+function toggleMobileSub(id, btn) {
+  const sub = document.getElementById(id);
+  const isOpen = sub.classList.contains('mob-open');
+  // Close all mobile subs
+  document.querySelectorAll('.mobile-sub').forEach(el => el.classList.remove('mob-open'));
+  document.querySelectorAll('.mobile-nav-link').forEach(el => el.classList.remove('mob-open'));
+  if (!isOpen) {
+    sub.classList.add('mob-open');
+    btn.classList.add('mob-open');
+  }
+}
+
+// Close dropdowns on outside click
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#langSwitcher')) {
+    const sw = document.getElementById('langSwitcher');
+    if (sw) sw.classList.remove('open');
+  }
+  if (!e.target.closest('.nav-item')) {
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('open'));
+  }
+});
+
+function detectLang() {
+  const stored = localStorage.getItem('nexus_lang');
+  if (stored) return stored;
+  const nav = navigator.language || navigator.userLanguage || 'zh';
+  if (nav.startsWith('zh')) return 'zh';
+  if (nav.startsWith('ja')) return 'ja';
+  return 'en';
+}
+
+// ============ CANVAS ANIMATION ============
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+let connections = [];
+let W, H;
+
+// Device helpers
+const isMobile = () => window.innerWidth < 768;
+const DPR = Math.min(window.devicePixelRatio || 1, 2); // cap at 2× — 3× screens don't need extra pixels here
+
+function resize() {
+  const displayW = window.innerWidth;
+  const displayH = window.innerHeight;
+  // Scale canvas buffer to physical pixels (crisp on HiDPI/Retina)
+  canvas.width  = displayW * DPR;
+  canvas.height = displayH * DPR;
+  canvas.style.width  = displayW + 'px';
+  canvas.style.height = displayH + 'px';
+  ctx.setTransform(1, 0, 0, 1, 0, 0); // reset before re-scaling
+  ctx.scale(DPR, DPR);
+  W = displayW;
+  H = displayH;
+}
+
+class Particle {
+  constructor() { this.reset(); }
+  reset() {
+    this.x = Math.random() * W;
+    this.y = Math.random() * H;
+    this.vx = (Math.random() - 0.5) * 0.3;
+    this.vy = (Math.random() - 0.5) * 0.3;
+    this.r = Math.random() * 1.5 + 0.5;
+    this.alpha = Math.random() * 0.5 + 0.1;
+    this.color = Math.random() > 0.6 ? '200,169,110' : '74,184,212';
+  }
+  update() {
+    this.x += this.vx; this.y += this.vy;
+    if (this.x < 0 || this.x > W) this.vx *= -1;
+    if (this.y < 0 || this.y > H) this.vy *= -1;
+  }
+  draw() {
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${this.color},${this.alpha})`;
+    ctx.fill();
+  }
+}
+
+function initParticles() {
+  // Mobile: 35 particles (saves ~55% render work), desktop: 80
+  const count = isMobile() ? 35 : 80;
+  particles = Array.from({ length: count }, () => new Particle());
+}
+
+function drawConnections() {
+  // Shorter connection radius on mobile = fewer lines to draw each frame
+  const maxDist = isMobile() ? 100 : 150;
+  for (let i = 0; i < particles.length; i++) {
+    for (let j = i + 1; j < particles.length; j++) {
+      const dx = particles[i].x - particles[j].x;
+      const dy = particles[i].y - particles[j].y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < maxDist) {
+        const alpha = (1 - dist/maxDist) * 0.15;
+        ctx.beginPath();
+        ctx.moveTo(particles[i].x, particles[i].y);
+        ctx.lineTo(particles[j].x, particles[j].y);
+        ctx.strokeStyle = `rgba(74,184,212,${alpha})`;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+      }
+    }
+  }
+}
+
+function animate() {
+  ctx.clearRect(0, 0, W, H);
+  particles.forEach(p => { p.update(); p.draw(); });
+  drawConnections();
+  requestAnimationFrame(animate);
+}
+
+// ============ CURSOR ============
+const cursor = document.getElementById('cursor');
+const cursorRing = document.getElementById('cursorRing');
+let mx = 0, my = 0, rx = 0, ry = 0;
+
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  cursor.style.left = mx - 4 + 'px';
+  cursor.style.top = my - 4 + 'px';
+});
+
+function animateCursor() {
+  rx += (mx - rx) * 0.12;
+  ry += (my - ry) * 0.12;
+  cursorRing.style.left = rx - 18 + 'px';
+  cursorRing.style.top = ry - 18 + 'px';
+  requestAnimationFrame(animateCursor);
+}
+
+document.querySelectorAll('a, button, .pillar').forEach(el => {
+  el.addEventListener('mouseenter', () => {
+    cursor.style.transform = 'scale(2.5)';
+    cursorRing.style.transform = 'scale(1.5)';
+    cursorRing.style.opacity = '1';
+  });
+  el.addEventListener('mouseleave', () => {
+    cursor.style.transform = 'scale(1)';
+    cursorRing.style.transform = 'scale(1)';
+    cursorRing.style.opacity = '0.5';
+  });
+});
+
+// ============ SCROLL ============
+window.addEventListener('scroll', () => {
+  const nav = document.getElementById('nav');
+  if (window.scrollY > 80) nav.classList.add('scrolled');
+  else nav.classList.remove('scrolled');
+});
+
+// ============ INTERSECTION OBSERVER ============
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) e.target.classList.add('visible');
+  });
+}, { threshold: 0.15 });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// ============ INIT ============
+window.addEventListener('resize', () => {
+  const wasMobile = particles.length === 35;
+  const nowMobile = isMobile();
+  resize();
+  // Re-init only if mobile/desktop class changed (e.g. screen rotation)
+  if (wasMobile !== nowMobile) initParticles();
+});
+resize();
+initParticles();
+animate();
+animateCursor();
+setLang(detectLang());
+</script>
+</body>
+</html>
